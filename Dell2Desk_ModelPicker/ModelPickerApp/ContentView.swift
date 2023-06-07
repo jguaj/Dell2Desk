@@ -12,8 +12,8 @@
 
 	struct ContentView : View {
 		@State private var isPlacement = false //toggles between model picker and placement buttons 
-		@State private var selectedModel: Model?
-		@State private var modelConfirmedForPlacement: Model?
+		@State private var selectedModel: Model? //will contain the name of the model that has been selected
+		@State private var modelConfirmedForPlacement: Model? //set to model name if confirmed for placement
 		
 		private var models: [Model] = {
 			// Dynamically get our model filename for easier integration 
@@ -49,6 +49,8 @@
 				
 				//determine which view to show
 				if self.isPlacement {
+				
+					//Note: $ gives read and write access to binding variable, as opposed to only read
 					PlacementButtonView(isPlacement: self.$isPlacement, selectedModel: self.$selectedModel, modelConfirmedForPlacement: self.$modelConfirmedForPlacement)
 				} else {
 					ModelPickerView(isPlacement: self.$isPlacement, selectedModel: self.$selectedModel, models: self.models)
@@ -85,8 +87,10 @@
 			return arView
 		}
 		
+		//adding models to the scene
 		func updateUIView(_ uiView: ARView, context: Context) {
 			
+			//safely unwrap
 			if let model = self.modelConfirmedForPlacement {
 				if model.modelName == "teapot" {
 					if let boxScene = try? Experience.loadBox() {
@@ -111,6 +115,7 @@
 					if let modelEntity = model.modelEntity {
 						print("DEBUG: updateUIView \(model.modelName)")
 
+						//in RealityKit, all objects have to be attached to an anchor
 						let anchorEntity = AnchorEntity(plane: .any)
 
 						anchorEntity.addChild(modelEntity.clone(recursive: true))
@@ -121,6 +126,7 @@
 					}
 				}
 
+				//circumvents issue of modifying binding var while UI is still processing it
 				DispatchQueue.main.async {
 					self.modelConfirmedForPlacement = nil
 				}
@@ -225,6 +231,7 @@
 						Button(action: {
 							print("DEBUG: Selected model \(self.models[index].modelName)")
 							
+							//once model is selected
 							self.selectedModel = self.models[index]
 							
 							self.isPlacement = true
@@ -256,6 +263,7 @@
 				// Cancel Button
 				Button(action: {
 					print("DEBUG: Canceled")
+					//go back to model picker
 					self.resetPlacementParameters()
 				}) {
 					Image(systemName: "xmark")
@@ -270,7 +278,10 @@
 				Button(action: {
 					print("DEBUG: Confirmed")
 					
+					//pass on selected model to model confirmed for placement
 					self.modelConfirmedForPlacement = self.selectedModel
+					
+					//go back to model picker
 					self.resetPlacementParameters()
 				}) {
 					Image(systemName: "checkmark")
@@ -283,9 +294,10 @@
 			}
 		}
 		
+		//DRY: do not repeate yourself
 		func resetPlacementParameters() {
 			self.isPlacement = false
-			self.selectedModel = nil
+			self.selectedModel = nil //intuitive, no model selected
 		}
 	}
 
