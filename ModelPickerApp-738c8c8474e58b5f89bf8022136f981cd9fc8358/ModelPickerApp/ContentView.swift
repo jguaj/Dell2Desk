@@ -1,284 +1,298 @@
-//
-//  ContentView.swift
-//  ModelPickerApp
-//
-//  Created by Yeonku on 2021/03/10.
-//
+	//
+	//  ContentView.swift
+	//  Dell2Desk
+	//
+	//  Created by Pavan Govu
+	//
 
-import SwiftUI
-import RealityKit
-import ARKit
-import FocusEntity
+	import SwiftUI
+	import RealityKit
+	import ARKit
+	import FocusEntity
 
-struct ContentView : View {
-    @State private var isPlacement = false
-    @State private var selectedModel: Model?
-    @State private var modelConfirmedForPlacement: Model?
-    
-    private var models: [Model] = {
-        // Dynamically get our model filename
-        let filemanager = FileManager.default
-        let path = Bundle.main.resourcePath
-        
-        guard let files = try?filemanager.contentsOfDirectory(atPath: path!) else {
-        return []
-        }
-        
-        var avaliableModels: [Model] = []
-        for filename in files where
-            filename.hasSuffix("usdz") {
-            let modelName = filename.replacingOccurrences(of: ".usdz", with: "")
-            let model = Model(modelName: modelName)
-            avaliableModels.append(model)
-        }
-        
-        return avaliableModels
-    }()
-    
-    var body: some View {
-//        return ARViewContainer().edgesIgnoringSafeArea(.all)
-//        Text("Hello World")
-        ZStack(alignment: .bottom, content: {
-            ARViewContainer(modelConfirmedForPlacement:     self.$modelConfirmedForPlacement).edgesIgnoringSafeArea(.all)
-            
-            if self.isPlacement {
-                PlacementButtonView(isPlacement: self.$isPlacement, selectedModel: self.$selectedModel, modelConfirmedForPlacement: self.$modelConfirmedForPlacement)
-            } else {
-                ModelPickerView(isPlacement: self.$isPlacement, selectedModel: self.$selectedModel, models: self.models)
-            }
-        })
-    }
-}
+	struct ContentView : View {
+		@State private var isPlacement = false //toggles between model picker and placement buttons 
+		@State private var selectedModel: Model?
+		@State private var modelConfirmedForPlacement: Model?
+		
+		private var models: [Model] = {
+			// Dynamically get our model filename for easier integration 
+			let filemanager = FileManager.default
+			let path = Bundle.main.resourcePath
+			
+			//we "guard" against the possibility of no models loaded (error handling)
+			guard let files = try?filemanager.contentsOfDirectory(atPath: path!) else {
+			return []
+			}
+			
+			//only pick files with usdz extension
+			var avaliableModels: [Model] = []
+			for filename in files where
+				filename.hasSuffix("usdz") {
+				let modelName = filename.replacingOccurrences(of: ".usdz", with: "")
+				let model = Model(modelName: modelName)
+				avaliableModels.append(model)
+			}
+			
+			return avaliableModels
+		}()
+		
+		var body: some View {
+	//        return ARViewContainer().edgesIgnoringSafeArea(.all)
+	//        Text("Hello World")
 
-struct ARViewContainer: UIViewRepresentable {
-    @Binding var modelConfirmedForPlacement: Model?
-    
-    func makeUIView(context: Context) -> ARView {
-        
-//        let arView = ARView(frame: .zero)
-        
-        // Load the "Box" scene from the "Experience" Reality File
-//        let boxAnchor = try! Experience.loadBox()
+			//allows us to arrange Dell models in a depth manner
+			
+			//TODO: implement horizontal stack + vertical stack
+			ZStack(alignment: .bottom, content: {
+				ARViewContainer(modelConfirmedForPlacement:     self.$modelConfirmedForPlacement).edgesIgnoringSafeArea(.all)
+				
+				//determine which view to show
+				if self.isPlacement {
+					PlacementButtonView(isPlacement: self.$isPlacement, selectedModel: self.$selectedModel, modelConfirmedForPlacement: self.$modelConfirmedForPlacement)
+				} else {
+					ModelPickerView(isPlacement: self.$isPlacement, selectedModel: self.$selectedModel, models: self.models)
+				}
+			})
+		}
+	}
 
-        // Add the box anchor to the scene
-//        arView.scene.anchors.append(boxAnchor)
-        
-//        let config = ARWorldTrackingConfiguration()
-//        config.planeDetection = [.horizontal, .vertical]
-//        config.environmentTexturing = .automatic
-//
-//        if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
-//            config.sceneReconstruction = .mesh
-//        }
-//
-//        arView.session.run(config)
-        
-        let arView = FocusARView(frame: .zero)
+	struct ARViewContainer: UIViewRepresentable {
+		@Binding var modelConfirmedForPlacement: Model?
+		
+		func makeUIView(context: Context) -> ARView {
+			
+	//        let arView = ARView(frame: .zero)
+			
+			// Load the "Box" scene from the "Experience" Reality File
+	//        let boxAnchor = try! Experience.loadBox()
 
-        return arView
-    }
-    
-    func updateUIView(_ uiView: ARView, context: Context) {
-        
-        if let model = self.modelConfirmedForPlacement {
-            if model.modelName == "teapot" {
-                if let boxScene = try? Experience.loadBox() {
-                    boxScene.steelBox?.scale = [5, 0.1, 5]
+			// Add the box anchor to the scene
+	//        arView.scene.anchors.append(boxAnchor)
+			
+	//        let config = ARWorldTrackingConfiguration()
+	//        config.planeDetection = [.horizontal, .vertical]
+	//        config.environmentTexturing = .automatic
+	//
+	//        if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
+	//            config.sceneReconstruction = .mesh
+	//        }
+	//
+	//        arView.session.run(config)
+			
+			let arView = FocusARView(frame: .zero)
 
-                    // Do something with box
-                    let physics = Physics()
-                    
-                    let boxEntity = boxScene.children[0].children[0].children[0]
-//                  boxEntity.name = "CUBE"
-                    print("DEBUG: boxEntity \(boxEntity)")
-                    
-                    let kinematicComponent: PhysicsBodyComponent = physics.physicsBody!
-                    let motionComponent: PhysicsMotionComponent = physics.physicsMotion!
+			return arView
+		}
+		
+		func updateUIView(_ uiView: ARView, context: Context) {
+			
+			if let model = self.modelConfirmedForPlacement {
+				if model.modelName == "teapot" {
+					if let boxScene = try? Experience.loadBox() {
+						boxScene.steelBox?.scale = [5, 0.1, 5]
 
-                    boxEntity.components.set(kinematicComponent)
-                    boxEntity.components.set(motionComponent)
+						// Do something with box
+						let physics = Physics()
+						
+						let boxEntity = boxScene.children[0].children[0].children[0]
+	//                  boxEntity.name = "CUBE"
+						print("DEBUG: boxEntity \(boxEntity)")
+						
+						let kinematicComponent: PhysicsBodyComponent = physics.physicsBody!
+						let motionComponent: PhysicsMotionComponent = physics.physicsMotion!
 
-                    uiView.scene.anchors.append(boxScene)
-                }
-            } else {
-                if let modelEntity = model.modelEntity {
-                    print("DEBUG: updateUIView \(model.modelName)")
+						boxEntity.components.set(kinematicComponent)
+						boxEntity.components.set(motionComponent)
 
-                    let anchorEntity = AnchorEntity(plane: .any)
+						uiView.scene.anchors.append(boxScene)
+					}
+				} else {
+					if let modelEntity = model.modelEntity {
+						print("DEBUG: updateUIView \(model.modelName)")
 
-                    anchorEntity.addChild(modelEntity.clone(recursive: true))
-                    
-                    uiView.scene.addAnchor(anchorEntity)
-                } else {
-                    print("DEBUG: Unable to load \(model.modelName)")
-                }
-            }
+						let anchorEntity = AnchorEntity(plane: .any)
 
-            DispatchQueue.main.async {
-                self.modelConfirmedForPlacement = nil
-            }
-        }
-    }
-}
+						anchorEntity.addChild(modelEntity.clone(recursive: true))
+						
+						uiView.scene.addAnchor(anchorEntity)
+					} else {
+						print("DEBUG: Unable to load \(model.modelName)")
+					}
+				}
 
-class Physics: Entity, HasPhysicsBody, HasPhysicsMotion {
-    required init() {
-        super.init()
+				DispatchQueue.main.async {
+					self.modelConfirmedForPlacement = nil
+				}
+			}
+		}
+	}
 
-        self.physicsBody = PhysicsBodyComponent(massProperties: .default,
-                                                      material: nil,
-                                                          mode: .kinematic)
+	class Physics: Entity, HasPhysicsBody, HasPhysicsMotion {
+		required init() {
+			super.init()
 
-        self.physicsMotion = PhysicsMotionComponent(linearVelocity: [0.1, 0, 0],
-                                                   angularVelocity: [1, 3, 5])
-    }
-}
+			self.physicsBody = PhysicsBodyComponent(massProperties: .default,
+														  material: nil,
+															  mode: .kinematic)
 
-class FocusARView: ARView {
-    enum FocusStyleChoices {
-      case classic
-      case material
-      case color
-    }
+			self.physicsMotion = PhysicsMotionComponent(linearVelocity: [0.1, 0, 0],
+													   angularVelocity: [1, 3, 5])
+		}
+	}
 
-    /// Style to be displayed in the example
-    let focusStyle: FocusStyleChoices = .classic
-    var focusEntity: FocusEntity?
+	class FocusARView: ARView {
+		enum FocusStyleChoices {
+		  case classic
+		  case material
+		  case color
+		}
 
-    required init(frame frameRect: CGRect) {
-      super.init(frame: frameRect)
-      self.setupConfig()
+		/// Style to be displayed in the example
+		let focusStyle: FocusStyleChoices = .classic
+		var focusEntity: FocusEntity?
 
-      switch self.focusStyle {
-      case .color:
-        self.focusEntity = FocusEntity(on: self, focus: .plane)
-      case .material:
-        do {
-          let onColor: MaterialColorParameter = try .texture(.load(named: "Add"))
-          let offColor: MaterialColorParameter = try .texture(.load(named: "Open"))
-          self.focusEntity = FocusEntity(
-            on: self,
-            style: .colored(
-              onColor: onColor, offColor: offColor,
-              nonTrackingColor: offColor
-            )
-          )
-        } catch {
-          self.focusEntity = FocusEntity(on: self, focus: .classic)
-          print("Unable to load plane textures")
-          print(error.localizedDescription)
-        }
-      default:
-        self.focusEntity = FocusEntity(on: self, focus: .classic)
-      }
-    }
+		required init(frame frameRect: CGRect) {
+		  super.init(frame: frameRect)
+		  self.setupConfig()
 
-    @objc required dynamic init?(coder decoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+		  switch self.focusStyle {
+		  case .color:
+			self.focusEntity = FocusEntity(on: self, focus: .plane)
+		  case .material:
+			do {
+			  let onColor: MaterialColorParameter = try .texture(.load(named: "Add"))
+			  let offColor: MaterialColorParameter = try .texture(.load(named: "Open"))
+			  self.focusEntity = FocusEntity(
+				on: self,
+				style: .colored(
+				  onColor: onColor, offColor: offColor,
+				  nonTrackingColor: offColor
+				)
+			  )
+			} catch {
+			  self.focusEntity = FocusEntity(on: self, focus: .classic)
+			  print("Unable to load plane textures")
+			  print(error.localizedDescription)
+			}
+		  default:
+			self.focusEntity = FocusEntity(on: self, focus: .classic)
+		  }
+		}
 
-    func setupConfig() {
-        let config = ARWorldTrackingConfiguration()
-        config.planeDetection = [.horizontal, .vertical]
-        config.environmentTexturing = .automatic
-        
-        if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
-            config.sceneReconstruction = .mesh
-        }
+		@objc required dynamic init?(coder decoder: NSCoder) {
+			fatalError("init(coder:) has not been implemented")
+		}
 
-        self.session.run(config)
-    }
-}
+		func setupConfig() {
+			let config = ARWorldTrackingConfiguration()
+			config.planeDetection = [.horizontal, .vertical]
+			config.environmentTexturing = .automatic
+			
+			if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
+				config.sceneReconstruction = .mesh
+			}
 
-extension FocusARView: FocusEntityDelegate {
-  func toTrackingState() {
-    print("tracking")
-  }
-  func toInitializingState() {
-    print("initializing")
-  }
-}
+			self.session.run(config)
+		}
+	}
 
-struct ModelPickerView: View {
-    @Binding var isPlacement: Bool
-    @Binding var selectedModel: Model?
-    
-    var models: [Model]
-    
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: true, content: {
-            HStack(spacing:10) {
-                ForEach(0 ..< self.models.count) {
-                    index in
-                    Button(action: {
-                        print("DEBUG: Selected model \(self.models[index].modelName)")
-                        
-                        self.selectedModel = self.models[index]
-                        
-                        self.isPlacement = true
-                    }) {
-                        Image(uiImage: self.models[index].image)
-                            .resizable()
-                            .frame(height:80)
-                            .aspectRatio(1/1, contentMode:.fit)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                    }
-                }
-            }
-        })
-        .padding(20)
-        .background(Color.black.opacity(0.5))
-    }
-}
+	extension FocusARView: FocusEntityDelegate {
+	  func toTrackingState() {
+		print("tracking")
+	  }
+	  func toInitializingState() {
+		print("initializing")
+	  }
+	}
 
-struct PlacementButtonView: View {
-    @Binding var isPlacement: Bool
-    @Binding var selectedModel: Model?
-    @Binding var modelConfirmedForPlacement: Model?
-    
-    var body: some View {
-        HStack {
-            // Cancel Button
-            Button(action: {
-                print("DEBUG: Canceled")
-                self.resetPlacementParameters()
-            }) {
-                Image(systemName: "xmark")
-                    .frame(width: 60, height: 60, alignment: .center)
-                    .font(.title)
-                    .background(Color.white.opacity(0.75))
-                    .cornerRadius(30)
-                    .padding(20)
-            }
-            
-            // Confirm Button
-            Button(action: {
-                print("DEBUG: Confirmed")
-                
-                self.modelConfirmedForPlacement = self.selectedModel
-                self.resetPlacementParameters()
-            }) {
-                Image(systemName: "checkmark")
-                    .frame(width: 60, height: 60, alignment: .center)
-                    .font(.title)
-                    .background(Color.white.opacity(0.75))
-                    .cornerRadius(30)
-                    .padding(20)
-            }
-        }
-    }
-    
-    func resetPlacementParameters() {
-        self.isPlacement = false
-        self.selectedModel = nil
-    }
-}
+	//created our own view for more elegant, modular solution
+	struct ModelPickerView: View {
+		@Binding var isPlacement: Bool
+		@Binding var selectedModel: Model?
+		
+		var models: [Model]
+		
+		var body: some View {
+			
+			//horizontal sliding to additional models off screen
+			ScrollView(.horizontal, showsIndicators: true, content: {
+				HStack(spacing:10) {
+					
+					//loop through the various usdz models currently loaded
+					ForEach(0 ..< self.models.count) {
+						index in
+						Button(action: {
+							print("DEBUG: Selected model \(self.models[index].modelName)")
+							
+							self.selectedModel = self.models[index]
+							
+							self.isPlacement = true
+						}) {
+							Image(uiImage: self.models[index].image)
+								//swift UI images are not resizable by default
+								.resizable()
+								.frame(height:80)
+								.aspectRatio(1/1, contentMode:.fit)
+								.background(Color.white)
+								.cornerRadius(12)
+						}
+					}
+				}
+			})
+			.padding(20) //20 pixels of padding in dock
+			.background(Color.black.opacity(0.5))
+		}
+	}
 
-#if DEBUG
-struct ContentView_Previews : PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
-}
-#endif
+	struct PlacementButtonView: View {
+		@Binding var isPlacement: Bool
+		@Binding var selectedModel: Model?
+		@Binding var modelConfirmedForPlacement: Model?
+		
+		//cancel and confirm button
+		var body: some View {
+			HStack {
+				// Cancel Button
+				Button(action: {
+					print("DEBUG: Canceled")
+					self.resetPlacementParameters()
+				}) {
+					Image(systemName: "xmark")
+						.frame(width: 60, height: 60, alignment: .center)
+						.font(.title)
+						.background(Color.white.opacity(0.75))
+						.cornerRadius(30)//half height to make it circular
+						.padding(20)
+				}
+				
+				// Confirm Button
+				Button(action: {
+					print("DEBUG: Confirmed")
+					
+					self.modelConfirmedForPlacement = self.selectedModel
+					self.resetPlacementParameters()
+				}) {
+					Image(systemName: "checkmark")
+						.frame(width: 60, height: 60, alignment: .center)
+						.font(.title)
+						.background(Color.white.opacity(0.75))
+						.cornerRadius(30) //half height to make it circular
+						.padding(20)
+				}
+			}
+		}
+		
+		func resetPlacementParameters() {
+			self.isPlacement = false
+			self.selectedModel = nil
+		}
+	}
+
+	#if DEBUG
+	struct ContentView_Previews : PreviewProvider {
+		static var previews: some View {
+			ContentView()
+		}
+	}
+	#endif
