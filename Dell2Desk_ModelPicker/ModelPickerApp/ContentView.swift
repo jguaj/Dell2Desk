@@ -118,10 +118,12 @@
 						//in RealityKit, all objects have to be attached to an anchor
 						let anchorEntity = AnchorEntity(plane: .any)
 
+						//creates copy of model entity but references original
 						anchorEntity.addChild(modelEntity.clone(recursive: true))
 						
 						uiView.scene.addAnchor(anchorEntity)
 					} else {
+						//if model entity is not available
 						print("DEBUG: Unable to load \(model.modelName)")
 					}
 				}
@@ -147,6 +149,7 @@
 		}
 	}
 
+	//logic for focus target square
 	class FocusARView: ARView {
 		enum FocusStyleChoices {
 		  case classic
