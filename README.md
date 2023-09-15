@@ -1,4 +1,4 @@
-# Dell2Desk
+# Dell2Desk (1st Place at Dell Hackathon '22)
 Bring the Dell store to your Desk! 
 
 Click [here](https://www.youtube.com/watch?v=af54lo7qwRw) to see it in action 💻
